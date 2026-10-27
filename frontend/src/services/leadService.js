@@ -1,16 +1,23 @@
 import api from './api';
 
+const extractData = (response) => {
+  if (response && response.data && response.data.data !== undefined) {
+    return response.data.data;
+  }
+  return response?.data;
+};
+
 export const leadService = {
   // Public enquiry submission
   async submitEnquiry(enquiryData) {
     const response = await api.post('/enquiries', enquiryData);
-    return response.data;
+    return extractData(response);
   },
 
   // Admin dashboard summary counts
   async getDashboardSummary() {
     const response = await api.get('/leads/dashboard');
-    return response.data;
+    return extractData(response);
   },
 
   // Get paginated leads
@@ -18,7 +25,7 @@ export const leadService = {
     const response = await api.get('/leads', {
       params: { page, size, sortBy, sortDir },
     });
-    return response.data;
+    return extractData(response);
   },
 
   // Search & filter leads
@@ -29,19 +36,19 @@ export const leadService = {
     if (status && status !== 'ALL') params.status = status;
 
     const response = await api.get('/leads/search', { params });
-    return response.data;
+    return extractData(response);
   },
 
   // Get single lead details
   async getLeadById(id) {
     const response = await api.get(`/leads/${id}`);
-    return response.data;
+    return extractData(response);
   },
 
   // Update lead status (PATCH /api/leads/{id}/status)
   async updateLeadStatus(id, status) {
     const response = await api.patch(`/leads/${id}/status`, { status });
-    return response.data;
+    return extractData(response);
   },
 
   // Add follow up note & next follow up date (POST /api/leads/{id}/follow-ups)
@@ -51,12 +58,12 @@ export const leadService = {
       payload.nextFollowUpDate = nextFollowUpDate;
     }
     const response = await api.post(`/leads/${id}/follow-ups`, payload);
-    return response.data;
+    return extractData(response);
   },
 
   // Delete lead
   async deleteLead(id) {
     const response = await api.delete(`/leads/${id}`);
-    return response.data;
+    return extractData(response);
   },
 };

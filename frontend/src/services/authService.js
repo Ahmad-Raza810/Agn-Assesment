@@ -3,8 +3,9 @@ import api from './api';
 export const authService = {
   async login(email, password) {
     const response = await api.post('/auth/login', { email, password });
-    const data = response.data;
-    if (data.token) {
+    // Handle both wrapped ApiResponse and raw response
+    const data = response.data?.data || response.data;
+    if (data?.token) {
       localStorage.setItem('token', data.token);
       localStorage.setItem(
         'user',
