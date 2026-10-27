@@ -1,0 +1,28 @@
+# Environment variables & secrets (NEVER COMMIT)
+.env
+.env.local
+.env.*.local
+*.env
+
+# Dependencies
+node_modules/
+backend/target/
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Build outputs
+frontend/dist/
+frontend/dist-ssr/
+*.local
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# OS metadata
+.DS_Store
+Thumbs.db
