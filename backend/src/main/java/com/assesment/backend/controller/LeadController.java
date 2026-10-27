@@ -2,13 +2,10 @@ package com.assesment.backend.controller;
 
 import com.assesment.backend.dto.*;
 import com.assesment.backend.model.LeadStatus;
-import com.assesment.backend.service.EnquiryServiceImpl;
+import com.assesment.backend.service.EnquiryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -18,12 +15,17 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class LeadController {
 
-    private final EnquiryServiceImpl enquiryServiceImpl;
+    private final EnquiryService enquiryService;
 
     @GetMapping("/dashboard")
-    public ResponseEntity<DashboardSummary> getDashboardSummary() {
-        DashboardSummary summary = enquiryServiceImpl.getDashboardSummary();
-        return ResponseEntity.ok(summary);
+    public ResponseEntity<ApiResponse<DashboardSummary>> getDashboardSummary() {
+        DashboardSummary summary = enquiryService.getDashboardSummary();
+        ApiResponse<DashboardSummary> response = new ApiResponse<>(
+                "Dashboard summary retrieved successfully",
+                summary,
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping
@@ -33,21 +35,17 @@ public class LeadController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
-
-        Page<EnquiryResponse> leads = enquiryServiceImpl.getAllEnquiries(page, size, sortBy, sortDir);
-
-        ResponseEntity<ApiResponse<Page<EnquiryResponse>>> response=new ApiResponse<>(
-                "enquiry submitted successfully.",
+        Page<EnquiryResponse> leads = enquiryService.getAllEnquiries(page, size, sortBy, sortDir);
+        ApiResponse<Page<EnquiryResponse>> response = new ApiResponse<>(
+                "Leads retrieved successfully",
                 leads,
                 HttpStatus.OK.value()
         );
-        return new ResponseEntity<>(response,HttpStatus.CREATED);
-
-
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/search")
-    public ResponseEntity<Page<EnquiryResponse>> searchLeads(
+    public ResponseEntity<ApiResponse<Page<EnquiryResponse>>> searchLeads(
             @RequestParam(required = false) String name,
             @RequestParam(required = false) String service,
             @RequestParam(required = false) LeadStatus status,
@@ -56,37 +54,62 @@ public class LeadController {
             @RequestParam(defaultValue = "createdAt") String sortBy,
             @RequestParam(defaultValue = "desc") String sortDir) {
 
-        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
-        Pageable pageable = PageRequest.of(page, size, sort);
-        Page<EnquiryResponse> leads = enquiryServiceImpl.searchEnquiries(name, service, status, pageable);
-        return ResponseEntity.ok(leads);
+        Page<EnquiryResponse> leads = enquiryService.searchEnquiries(name, service, status, page, size, sortBy, sortDir);
+        ApiResponse<Page<EnquiryResponse>> response = new ApiResponse<>(
+                "Leads search results retrieved successfully",
+                leads,
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<EnquiryResponse> getLeadById(@PathVariable Long id) {
-        EnquiryResponse lead = enquiryServiceImpl.getEnquiryById(id);
-        return ResponseEntity.ok(lead);
+    public ResponseEntity<ApiResponse<EnquiryResponse>> getLeadById(@PathVariable Long id) {
+        EnquiryResponse lead = enquiryService.getEnquiryById(id);
+        ApiResponse<EnquiryResponse> response = new ApiResponse<>(
+                "Lead retrieved successfully",
+                lead,
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PatchMapping("/{id}/status")
-    public ResponseEntity<EnquiryResponse> updateLeadStatus(
+    public ResponseEntity<ApiResponse<EnquiryResponse>> updateLeadStatus(
             @PathVariable Long id,
             @Valid @RequestBody UpdateStatusRequest request) {
-        EnquiryResponse lead = enquiryServiceImpl.updateStatus(id, request);
-        return ResponseEntity.ok(lead);
+
+        EnquiryResponse lead = enquiryService.updateStatus(id, request);
+        ApiResponse<EnquiryResponse> response = new ApiResponse<>(
+                "Lead status updated successfully",
+                lead,
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
     }
 
     @PostMapping("/{id}/follow-ups")
-    public ResponseEntity<EnquiryResponse> addFollowUp(
+    public ResponseEntity<ApiResponse<EnquiryResponse>> addFollowUp(
             @PathVariable Long id,
             @Valid @RequestBody FollowUpRequest request) {
-        EnquiryResponse lead = enquiryServiceImpl.addFollowUp(id, request);
-        return ResponseEntity.ok(lead);
+
+        EnquiryResponse lead = enquiryService.addFollowUp(id, request);
+        ApiResponse<EnquiryResponse> response = new ApiResponse<>(
+                "Follow-up added successfully",
+                lead,
+                HttpStatus.CREATED.value()
+        );
+        return new ResponseEntity<>(response, HttpStatus.CREATED);
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteLead(@PathVariable Long id) {
-        enquiryServiceImpl.deleteEnquiry(id);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ApiResponse<Void>> deleteLead(@PathVariable Long id) {
+        enquiryService.deleteEnquiry(id);
+        ApiResponse<Void> response = new ApiResponse<>(
+                "Lead deleted successfully",
+                null,
+                HttpStatus.OK.value()
+        );
+        return ResponseEntity.ok(response);
     }
 }
