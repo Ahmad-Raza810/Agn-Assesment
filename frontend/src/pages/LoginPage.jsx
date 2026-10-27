@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import { Lock, Mail, Key, ShieldCheck, ArrowRight, Layers, Sparkles } from 'lucide-react';
+import { Lock, Mail, Key, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
   const { login, isAuthenticated } = useAuth();
@@ -56,13 +56,6 @@ export default function LoginPage() {
     }
   };
 
-  // Demo shortcut to quickly populate sample credentials
-  const fillDemoCredentials = () => {
-    setEmail('admin@example.com');
-    setPassword('admin123');
-    setFormError('');
-  };
-
   return (
     <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center p-4 bg-gradient-to-b from-slate-50 to-slate-100">
       <div className="w-full max-w-md bg-white rounded-3xl p-8 sm:p-10 shadow-xl border border-slate-100">
@@ -75,26 +68,6 @@ export default function LoginPage() {
           <p className="text-xs text-slate-500 mt-1">
             Sign in to manage incoming enquiries, leads, and follow-ups.
           </p>
-        </div>
-
-        {/* Demo Credentials Quick-Fill Banner */}
-        <div className="mb-6 p-3.5 bg-indigo-50/70 border border-indigo-100 rounded-2xl flex items-center justify-between">
-          <div className="text-xs text-indigo-950">
-            <span className="font-bold flex items-center gap-1">
-              <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
-              Demo Admin Account:
-            </span>
-            <span className="text-[11px] text-indigo-700 block mt-0.5">
-              admin@example.com / admin123
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={fillDemoCredentials}
-            className="px-2.5 py-1 text-xs font-bold text-indigo-700 bg-white hover:bg-indigo-100/50 rounded-lg border border-indigo-200 transition shadow-xs"
-          >
-            Auto-fill
-          </button>
         </div>
 
         {/* Error message */}
@@ -147,7 +120,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 disabled:opacity-50 mt-6"
+            className="w-full py-3 px-4 rounded-xl font-semibold text-white bg-indigo-600 hover:bg-indigo-700 transition shadow-lg shadow-indigo-200 flex items-center justify-center gap-2 disabled:opacity-50 mt-6 cursor-pointer"
           >
             {isSubmitting ? (
               <>
