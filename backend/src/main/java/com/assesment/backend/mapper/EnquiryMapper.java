@@ -14,6 +14,10 @@ public interface EnquiryMapper {
 
     EnquiryResponse toDto(Enquiry enquiry);
 
-    @Mapping(target = "followUps", source = "followUps")
+    @Mapping(target = "id", ignore = true)
+    @Mapping(target = "status", ignore = true)
+    @Mapping(target = "createdAt", ignore = true)
+    @Mapping(target = "updatedAt", ignore = true)
+    @Mapping(target = "followUps", ignore = true)
     Enquiry toEntity(EnquiryRequest request);
 }
