@@ -1,7 +1,9 @@
 package com.assesment.backend.service;
 
 import com.assesment.backend.dto.*;
+import com.assesment.backend.execption.ResourceNotFoundException;
 import com.assesment.backend.mapper.EnquiryMapper;
+import com.assesment.backend.mapper.FollowUpMapper;
 import com.assesment.backend.model.Enquiry;
 import com.assesment.backend.model.FollowUp;
 import com.assesment.backend.model.LeadStatus;
@@ -15,75 +17,87 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class EnquiryServiceImpl implements EnquiryService  {
+public class EnquiryServiceImpl implements EnquiryService {
 
     private final EnquiryRepository enquiryRepository;
     private final FollowUpRepository followUpRepository;
-    private final EnquiryMapper mapper;
+    private final EnquiryMapper enquiryMapper;
+    private final FollowUpMapper followUpMapper;
 
+    @Override
     public EnquiryResponse createEnquiry(EnquiryRequest request) {
-
-        Enquiry enquiry = mapper.toEntity(request);
+        Enquiry enquiry = enquiryMapper.toEntity(request);
         enquiry.setStatus(LeadStatus.NEW);
         Enquiry savedEnquiry = enquiryRepository.save(enquiry);
-        return mapper.toDto(savedEnquiry);
+        return enquiryMapper.toDto(savedEnquiry);
     }
 
-    public Page<EnquiryResponse> getAllEnquiries(int page,int size,String sortBy,String sortDir) {
+    @Override
+    public Page<EnquiryResponse> getAllEnquiries(Pageable pageable) {
+        return enquiryRepository.findAll(pageable).map(enquiryMapper::toDto);
+    }
 
+    @Override
+    public Page<EnquiryResponse> getAllEnquiries(int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
-
-        return enquiryRepository.findAll(pageable)
-                .map(pageRequest -> mapper.toDto(pageRequest));
+        return getAllEnquiries(pageable);
     }
 
+    @Override
     public Page<EnquiryResponse> searchEnquiries(String name, String service, LeadStatus status, Pageable pageable) {
-        return enquiryRepository.searchEnquiries(name, service, status, pageable)
-                .map(this::mapToResponse);
+        return enquiryRepository.searchEnquiries(name, service, status, pageable).map(enquiryMapper::toDto);
     }
 
+    @Override
+    public Page<EnquiryResponse> searchEnquiries(String name, String service, LeadStatus status, int page, int size, String sortBy, String sortDir) {
+        Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
+        Pageable pageable = PageRequest.of(page, size, sort);
+        return searchEnquiries(name, service, status, pageable);
+    }
+
+    @Override
     public EnquiryResponse getEnquiryById(Long id) {
         Enquiry enquiry = enquiryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Enquiry not found with id: " + id));
-        return mapToResponse(enquiry);
+                .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
+        return enquiryMapper.toDto(enquiry);
     }
 
+    @Override
     public EnquiryResponse updateStatus(Long id, UpdateStatusRequest request) {
         Enquiry enquiry = enquiryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Enquiry not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
         enquiry.setStatus(request.getStatus());
         Enquiry updatedEnquiry = enquiryRepository.save(enquiry);
-        return mapToResponse(updatedEnquiry);
+        return enquiryMapper.toDto(updatedEnquiry);
     }
 
+    @Override
     public EnquiryResponse addFollowUp(Long id, FollowUpRequest request) {
         Enquiry enquiry = enquiryRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Enquiry not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
 
-        FollowUp followUp = new FollowUp();
+        FollowUp followUp = followUpMapper.toEntity(request);
         followUp.setEnquiry(enquiry);
-        followUp.setNotes(request.getNotes());
-        followUp.setNextFollowUpDate(request.getNextFollowUpDate());
-
-        enquiry.getFollowUps().add(followUp);
         followUpRepository.save(followUp);
 
+        enquiry.getFollowUps().add(followUp);
         Enquiry updatedEnquiry = enquiryRepository.save(enquiry);
-        return mapToResponse(updatedEnquiry);
+        return enquiryMapper.toDto(updatedEnquiry);
     }
 
+    @Override
     public void deleteEnquiry(Long id) {
         if (!enquiryRepository.existsById(id)) {
-            throw new RuntimeException("Enquiry not found with id: " + id);
+            throw new ResourceNotFoundException("Enquiry not found with id: " + id);
         }
         enquiryRepository.deleteById(id);
     }
 
+    @Override
     public DashboardSummary getDashboardSummary() {
         DashboardSummary summary = new DashboardSummary();
         summary.setTotalEnquiries(enquiryRepository.count());
