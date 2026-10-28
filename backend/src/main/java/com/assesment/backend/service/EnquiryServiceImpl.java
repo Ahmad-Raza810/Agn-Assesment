@@ -8,6 +8,7 @@ import com.assesment.backend.mapper.FollowUpMapper;
 import com.assesment.backend.model.Enquiry;
 import com.assesment.backend.model.FollowUp;
 import com.assesment.backend.model.LeadStatus;
+import com.assesment.backend.model.ServiceType;
 import com.assesment.backend.repository.EnquiryRepository;
 import com.assesment.backend.repository.FollowUpRepository;
 import lombok.RequiredArgsConstructor;
@@ -51,12 +52,13 @@ public class EnquiryServiceImpl implements EnquiryService {
     }
 
     @Override
-    public Page<EnquiryResponse> searchEnquiries(String name, String service, LeadStatus status, Pageable pageable) {
-        return enquiryRepository.searchEnquiries(name, service, status, pageable).map(enquiryMapper::toDto);
+    public Page<EnquiryResponse> searchEnquiries(String name, ServiceType service, LeadStatus status, Pageable pageable) {
+        String cleanName = (name != null && !name.trim().isEmpty()) ? name.trim() : null;
+        return enquiryRepository.searchEnquiries(cleanName, service, status, pageable).map(enquiryMapper::toDto);
     }
 
     @Override
-    public Page<EnquiryResponse> searchEnquiries(String name, String service, LeadStatus status, int page, int size, String sortBy, String sortDir) {
+    public Page<EnquiryResponse> searchEnquiries(String name, ServiceType service, LeadStatus status, int page, int size, String sortBy, String sortDir) {
         Sort sort = sortDir.equalsIgnoreCase("desc") ? Sort.by(sortBy).descending() : Sort.by(sortBy).ascending();
         Pageable pageable = PageRequest.of(page, size, sort);
         return searchEnquiries(name, service, status, pageable);
@@ -74,7 +76,6 @@ public class EnquiryServiceImpl implements EnquiryService {
         Enquiry enquiry = enquiryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
 
-        // Mandatory Follow-up Date Rule: When setting status to FOLLOW_UP, follow-up date is mandatory
         if (request.getStatus() == LeadStatus.FOLLOW_UP) {
             boolean hasExistingUpcomingFollowUp = enquiry.getFollowUps() != null && enquiry.getFollowUps().stream()
                     .anyMatch(f -> f.getNextFollowUpDate() != null && !f.getNextFollowUpDate().isBefore(LocalDateTime.now()));
@@ -83,7 +84,6 @@ public class EnquiryServiceImpl implements EnquiryService {
                 throw new BadRequestException("Next follow-up date is mandatory when status is set to FOLLOW_UP");
             }
 
-            // If a date was provided with the status update, record it as a follow-up
             if (request.getNextFollowUpDate() != null) {
                 FollowUp followUp = new FollowUp();
                 followUp.setEnquiry(enquiry);
@@ -98,7 +98,6 @@ public class EnquiryServiceImpl implements EnquiryService {
 
         enquiry.setStatus(request.getStatus());
 
-        // Edge Cases 5 & 6: Converted / Lost lead -> Exclude from active follow-ups & cancel active reminders
         if (request.getStatus() == LeadStatus.CONVERTED || request.getStatus() == LeadStatus.LOST) {
             LocalDateTime now = LocalDateTime.now();
             if (enquiry.getFollowUps() != null) {
@@ -119,9 +118,8 @@ public class EnquiryServiceImpl implements EnquiryService {
         Enquiry enquiry = enquiryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
 
-        // Mandatory Follow-up Date Rule: When status is FOLLOW_UP, date is mandatory
-        if (enquiry.getStatus() == LeadStatus.FOLLOW_UP && request.getNextFollowUpDate() == null) {
-            throw new BadRequestException("Next follow-up date is mandatory when status is FOLLOW_UP");
+        if (request.getNextFollowUpDate() == null) {
+            throw new BadRequestException("Next follow-up date is mandatory when adding a follow-up");
         }
 
         FollowUp followUp = followUpMapper.toEntity(request);
@@ -129,6 +127,11 @@ public class EnquiryServiceImpl implements EnquiryService {
         followUpRepository.save(followUp);
 
         enquiry.getFollowUps().add(followUp);
+
+        if (enquiry.getStatus() == LeadStatus.NEW || enquiry.getStatus() == LeadStatus.CONTACTED) {
+            enquiry.setStatus(LeadStatus.FOLLOW_UP);
+        }
+
         Enquiry updatedEnquiry = enquiryRepository.save(enquiry);
         return enquiryMapper.toDto(updatedEnquiry);
     }
@@ -155,8 +158,6 @@ public class EnquiryServiceImpl implements EnquiryService {
         summary.setContactedLeads(enquiryRepository.countByStatus(LeadStatus.CONTACTED));
         summary.setFollowUpLeads(enquiryRepository.countByStatus(LeadStatus.FOLLOW_UP));
         summary.setLostLeads(enquiryRepository.countByStatus(LeadStatus.LOST));
-
-        // Edge case counts: Overdue, Due Today, and Unscheduled Follow-ups
         summary.setOverdueFollowUps(enquiryRepository.countOverdueFollowUps(startOfDay));
         summary.setDueTodayFollowUps(enquiryRepository.countDueTodayFollowUps(startOfDay, endOfDay));
         summary.setUnscheduledFollowUps(enquiryRepository.countUnscheduledFollowUps());

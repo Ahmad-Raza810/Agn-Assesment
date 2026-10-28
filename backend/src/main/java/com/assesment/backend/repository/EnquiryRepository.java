@@ -2,6 +2,7 @@ package com.assesment.backend.repository;
 
 import com.assesment.backend.model.Enquiry;
 import com.assesment.backend.model.LeadStatus;
+import com.assesment.backend.model.ServiceType;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -16,16 +17,16 @@ public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
 
     Page<Enquiry> findByNameContainingIgnoreCase(String name, Pageable pageable);
 
-    Page<Enquiry> findByServiceOfInterestContainingIgnoreCase(String service, Pageable pageable);
+    Page<Enquiry> findByServiceOfInterest(ServiceType service, Pageable pageable);
 
     Page<Enquiry> findByStatus(LeadStatus status, Pageable pageable);
 
     @Query("SELECT e FROM Enquiry e WHERE " +
            "(:name IS NULL OR LOWER(e.name) LIKE LOWER(CONCAT('%', :name, '%'))) AND " +
-           "(:service IS NULL OR LOWER(e.serviceOfInterest) LIKE LOWER(CONCAT('%', :service, '%'))) AND " +
+           "(:service IS NULL OR e.serviceOfInterest = :service) AND " +
            "(:status IS NULL OR e.status = :status)")
     Page<Enquiry> searchEnquiries(@Param("name") String name,
-                                   @Param("service") String service,
+                                   @Param("service") ServiceType service,
                                    @Param("status") LeadStatus status,
                                    Pageable pageable);
 

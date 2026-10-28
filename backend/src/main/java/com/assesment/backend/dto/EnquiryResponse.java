@@ -1,6 +1,7 @@
 package com.assesment.backend.dto;
 
 import com.assesment.backend.model.LeadStatus;
+import com.assesment.backend.model.ServiceType;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -16,7 +17,7 @@ public class EnquiryResponse {
     private String name;
     private String email;
     private String phone;
-    private String serviceOfInterest;
+    private ServiceType serviceOfInterest;
     private String message;
     private LeadStatus status;
     private LocalDateTime createdAt;

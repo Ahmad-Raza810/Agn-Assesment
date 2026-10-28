@@ -32,7 +32,7 @@ A Spring Boot backend for managing website enquiries and lead tracking with JWT 
 
 ## Database Setup
 
-The application will automatically create the database `lead_management` on first run if it doesn't exist. The tables will be created automatically by Hibernate.
+The application will automatically create the database `lead_db` on first run if it doesn't exist. The tables will be created automatically by Hibernate.
 
 ### Default Users Created on Startup
 
@@ -66,7 +66,7 @@ cp .env.example .env
 # Database Configuration
 DB_HOST=localhost
 DB_PORT=3306
-DB_NAME=lead_management
+DB_NAME=lead_db
 DB_USERNAME=admin
 DB_PASSWORD=ahmad1234
 
@@ -312,7 +312,7 @@ The application uses environment variables loaded from a `.env` file in the proj
 |----------|-------------|---------|
 | `DB_HOST` | Database host | localhost |
 | `DB_PORT` | Database port | 3306 |
-| `DB_NAME` | Database name | lead_management |
+| `DB_NAME` | Database name | lead_db |
 | `DB_USERNAME` | Database username | admin |
 | `DB_PASSWORD` | Database password | ahmad1234 |
 | `JWT_SECRET` | Secret key for JWT signing | (see .env.example) |

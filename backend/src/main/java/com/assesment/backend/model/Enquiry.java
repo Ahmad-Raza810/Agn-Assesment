@@ -5,6 +5,7 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import com.assesment.backend.model.ServiceType;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,10 +30,10 @@ public class Enquiry {
     @Column(length = 20)
     private String phone;
 
-    @Column(nullable = false, length = 100)
-    private String serviceOfInterest;
+    @Column(nullable = false, length = 60)
+    private ServiceType serviceOfInterest;
 
-    @Column(nullable = false, columnDefinition = "TEXT")
+    @Column(nullable = false, length = 2000)
     private String message;
 
     @Enumerated(EnumType.STRING)

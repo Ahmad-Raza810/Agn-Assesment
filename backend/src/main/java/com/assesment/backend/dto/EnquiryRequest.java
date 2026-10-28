@@ -1,5 +1,7 @@
 package com.assesment.backend.dto;
 
+import com.assesment.backend.model.ServiceType;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
@@ -24,10 +26,10 @@ public class EnquiryRequest {
     @Size(max = 20, message = "Phone must not exceed 20 characters")
     private String phone;
 
-    @NotBlank(message = "Service of interest is required")
-    @Size(max = 100, message = "Service must not exceed 100 characters")
-    private String serviceOfInterest;
+    @NotNull(message = "Service of interest is required")
+    private ServiceType serviceOfInterest;
 
     @NotBlank(message = "Message is required")
+    @Size(min = 20, max = 2000, message = "Message must be between 20 and 2000 characters")
     private String message;
 }

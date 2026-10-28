@@ -2,6 +2,7 @@ package com.assesment.backend.controller;
 
 import com.assesment.backend.dto.*;
 import com.assesment.backend.model.LeadStatus;
+import com.assesment.backend.model.ServiceType;
 import com.assesment.backend.service.EnquiryService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -47,7 +48,7 @@ public class LeadController {
     @GetMapping("/search")
     public ResponseEntity<ApiResponse<Page<EnquiryResponse>>> searchLeads(
             @RequestParam(required = false) String name,
-            @RequestParam(required = false) String service,
+            @RequestParam(required = false) ServiceType service,
             @RequestParam(required = false) LeadStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size,
