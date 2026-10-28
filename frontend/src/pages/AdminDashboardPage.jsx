@@ -9,6 +9,8 @@ import { leadService } from '../services/leadService';
 import { useToast } from '../context/ToastContext';
 import { RefreshCw, Download, Plus, LayoutDashboard, Sparkles } from 'lucide-react';
 
+const SPECIAL_FILTERS = ['PENDING_FOLLOWUP', 'DUE_TODAY', 'OVERDUE', 'UNSCHEDULED'];
+
 export default function AdminDashboardPage() {
   const { success, error: toastError } = useToast();
 
@@ -64,17 +66,18 @@ export default function AdminDashboardPage() {
   const fetchLeads = useCallback(async () => {
     setIsLeadsLoading(true);
     try {
+      const isSpecialFilter = SPECIAL_FILTERS.includes(selectedStatus);
       const isFiltered =
         debouncedSearch.trim() !== '' ||
         (selectedService !== 'All Services' && selectedService !== '') ||
-        (selectedStatus !== 'ALL' && selectedStatus !== 'PENDING_FOLLOWUP');
+        (selectedStatus !== 'ALL' && !isSpecialFilter);
 
       let data;
       if (isFiltered) {
         data = await leadService.searchLeads({
           name: debouncedSearch,
           service: selectedService === 'All Services' ? '' : selectedService,
-          status: selectedStatus === 'ALL' || selectedStatus === 'PENDING_FOLLOWUP' ? null : selectedStatus,
+          status: isSpecialFilter || selectedStatus === 'ALL' ? null : selectedStatus,
           page,
           size,
           sortBy,
@@ -90,17 +93,46 @@ export default function AdminDashboardPage() {
       }
 
       let content = data.content || [];
+      const now = new Date();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
 
-      // If user clicked the "Pending Follow-ups" KPI card, filter leads that have pending follow-up date
+      // Handle Edge-Case Follow-up Filter Categories
       if (selectedStatus === 'PENDING_FOLLOWUP') {
         content = content.filter(
-          (l) => l.followUps && l.followUps.some((f) => f.nextFollowUpDate != null)
+          (l) =>
+            l.status !== 'CONVERTED' &&
+            l.status !== 'LOST' &&
+            l.followUps &&
+            l.followUps.some((f) => f.nextFollowUpDate != null)
         );
+      } else if (selectedStatus === 'DUE_TODAY') {
+        content = content.filter((l) => {
+          if (l.status === 'CONVERTED' || l.status === 'LOST') return false;
+          const withDates = (l.followUps || []).filter((f) => f.nextFollowUpDate);
+          if (withDates.length === 0) return false;
+          const latest = new Date(withDates[withDates.length - 1].nextFollowUpDate);
+          return latest >= startOfToday && latest <= endOfToday;
+        });
+      } else if (selectedStatus === 'OVERDUE') {
+        content = content.filter((l) => {
+          if (l.status === 'CONVERTED' || l.status === 'LOST') return false;
+          const withDates = (l.followUps || []).filter((f) => f.nextFollowUpDate);
+          if (withDates.length === 0) return false;
+          const latest = new Date(withDates[withDates.length - 1].nextFollowUpDate);
+          return latest < startOfToday;
+        });
+      } else if (selectedStatus === 'UNSCHEDULED') {
+        content = content.filter((l) => {
+          if (l.status !== 'FOLLOW_UP') return false;
+          const withDates = (l.followUps || []).filter((f) => f.nextFollowUpDate);
+          return withDates.length === 0;
+        });
       }
 
       setLeads(content);
       setTotalPages(data.totalPages || 0);
-      setTotalElements(data.totalElements || 0);
+      setTotalElements(isSpecialFilter ? content.length : (data.totalElements || 0));
     } catch (err) {
       console.error('Fetch leads error:', err);
       toastError(err.response?.data?.message || 'Failed to fetch enquiries.');
@@ -216,7 +248,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Dashboard Summary Statistics Cards */}
+        {/* Dashboard Summary Statistics Cards with Edge Cases */}
         <DashboardStats
           summary={summary}
           selectedStatus={selectedStatus}

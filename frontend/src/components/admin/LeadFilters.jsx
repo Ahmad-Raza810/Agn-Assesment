@@ -13,12 +13,16 @@ const SERVICES = [
 ];
 
 const STATUS_OPTIONS = [
-  { value: 'ALL', label: 'All Statuses' },
+  { value: 'ALL', label: 'All Statuses & Follow-ups' },
+  { value: 'DUE_TODAY', label: '🔔 Due Today' },
+  { value: 'OVERDUE', label: '🚨 Overdue Follow-ups' },
+  { value: 'PENDING_FOLLOWUP', label: '⏰ All Active Follow-ups' },
+  { value: 'UNSCHEDULED', label: '⚠️ Unscheduled Follow-ups' },
   { value: 'NEW', label: 'New' },
   { value: 'CONTACTED', label: 'Contacted' },
-  { value: 'FOLLOW_UP', label: 'Follow-up' },
-  { value: 'CONVERTED', label: 'Converted' },
-  { value: 'LOST', label: 'Lost' },
+  { value: 'FOLLOW_UP', label: 'In Follow-up' },
+  { value: 'CONVERTED', label: 'Converted (Completed)' },
+  { value: 'LOST', label: 'Lost (Cancelled)' },
 ];
 
 export default function LeadFilters({
@@ -76,8 +80,8 @@ export default function LeadFilters({
           </select>
         </div>
 
-        {/* Status selector */}
-        <div className="min-w-[160px]">
+        {/* Status & Follow-up selector */}
+        <div className="min-w-[210px]">
           <select
             value={selectedStatus}
             onChange={(e) => onStatusChange(e.target.value)}
@@ -128,7 +132,7 @@ export default function LeadFilters({
             )}
             {selectedStatus && selectedStatus !== 'ALL' && (
               <span className="px-2 py-0.5 rounded-md bg-purple-50 text-purple-700 text-[11px] font-medium">
-                Status: {selectedStatus}
+                Filter: {selectedStatus}
               </span>
             )}
           </div>
