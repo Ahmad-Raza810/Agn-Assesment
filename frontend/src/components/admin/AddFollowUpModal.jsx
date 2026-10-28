@@ -38,6 +38,12 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
       return;
     }
 
+    // Follow-up date is mandatory when lead status is FOLLOW_UP
+    if (lead.status === 'FOLLOW_UP' && !nextFollowUpDate) {
+      setError('Next follow-up date is required when status is Follow-up.');
+      return;
+    }
+
     // Edge Case 1: Past date selected -> requires confirmation or rejection
     if (isPastDate && !allowPastDate) {
       setError('Selected date is in the past. Check the confirmation box below to save as an Overdue follow-up.');
@@ -56,8 +62,6 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
       
       if (isPastDate) {
         warning('Follow-up recorded and immediately flagged as OVERDUE.');
-      } else if (!nextFollowUpDate && lead.status === 'FOLLOW_UP') {
-        warning('Follow-up recorded. Note: Next follow-up date remains unscheduled.');
       } else {
         success('Follow-up record added successfully!');
       }
@@ -128,7 +132,12 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Next Follow-up Date & Time <span className="text-slate-400 font-normal lowercase">(optional)</span>
+              Next Follow-up Date & Time{' '}
+              {lead.status === 'FOLLOW_UP' ? (
+                <span className="text-rose-500 font-normal lowercase">*</span>
+              ) : (
+                <span className="text-slate-400 font-normal lowercase">(optional)</span>
+              )}
             </label>
             <span className="text-[11px] text-slate-400">Quick presets:</span>
           </div>
@@ -205,8 +214,9 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
           )}
 
           {!nextFollowUpDate && lead.status === 'FOLLOW_UP' && (
-            <p className="text-[11px] text-amber-600 mt-1 font-medium">
-              Notice: Leaving date blank will keep this follow-up marked as "Unscheduled".
+            <p className="text-[11px] text-rose-600 mt-1 font-medium flex items-center gap-1">
+              <span>⚠</span>
+              <span>Follow-up date is required when status is Follow-up.</span>
             </p>
           )}
         </div>
