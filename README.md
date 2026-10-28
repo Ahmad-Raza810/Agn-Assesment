@@ -52,7 +52,7 @@ DB_PASSWORD=your_mysql_password
 
 # JWT Authentication
 JWT_SECRET=404E635266556A586E3272357538782F413F4428472B4B6250645367566B5970
-JWT_EXPIRATION=86400000
+JWT_EXPIRATION=1800000
 ```
 
 > **Note**: If the `lead_db` database does not exist, Spring Boot will automatically create it on startup via `createDatabaseIfNotExist=true`, and Hibernate will auto-create and update all schema tables (`ddl-auto: update`).

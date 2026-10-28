@@ -72,7 +72,7 @@ DB_PASSWORD=ahmad1234
 
 # JWT Configuration
 JWT_SECRET=mySecretKeyForJwtTokenGenerationThatIsLongEnoughForHS256Algorithm
-JWT_EXPIRATION=86400000
+JWT_EXPIRATION=1800000
 
 # Server Configuration
 SERVER_PORT=8080
@@ -316,7 +316,7 @@ The application uses environment variables loaded from a `.env` file in the proj
 | `DB_USERNAME` | Database username | admin |
 | `DB_PASSWORD` | Database password | ahmad1234 |
 | `JWT_SECRET` | Secret key for JWT signing | (see .env.example) |
-| `JWT_EXPIRATION` | Token expiration in ms | 86400000 (24h) |
+| `JWT_EXPIRATION` | Token expiration in ms | 1800000 (30min) |
 | `SERVER_PORT` | Server port | 8080 |
 | `JPA_HIBERNATE_DDL_AUTO` | Hibernate DDL mode | update |
 | `JPA_SHOW_SQL` | Show SQL queries | true |
