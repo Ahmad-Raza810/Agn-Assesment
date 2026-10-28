@@ -180,6 +180,14 @@ export default function AdminDashboardPage() {
   };
 
   const handleQuickStatusChange = async (leadId, newStatus) => {
+    // FOLLOW_UP requires a follow-up date — redirect to the AddFollowUp modal
+    if (newStatus === 'FOLLOW_UP') {
+      const lead = leads.find((l) => l.id === leadId);
+      if (lead) {
+        setFollowUpLead(lead);
+      }
+      return;
+    }
     try {
       await leadService.updateLeadStatus(leadId, newStatus);
       success(`Lead status updated to ${newStatus}`);
