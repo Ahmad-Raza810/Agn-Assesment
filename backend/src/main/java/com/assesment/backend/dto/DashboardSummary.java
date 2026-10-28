@@ -15,4 +15,7 @@ public class DashboardSummary {
     private long contactedLeads;
     private long followUpLeads;
     private long lostLeads;
+    private long overdueFollowUps;
+    private long dueTodayFollowUps;
+    private long unscheduledFollowUps;
 }

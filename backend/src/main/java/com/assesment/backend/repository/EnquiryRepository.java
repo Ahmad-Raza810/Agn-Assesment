@@ -10,7 +10,6 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
-import java.util.List;
 
 @Repository
 public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
@@ -35,6 +34,15 @@ public interface EnquiryRepository extends JpaRepository<Enquiry, Long> {
     @Query("SELECT COUNT(DISTINCT e) FROM Enquiry e JOIN e.followUps f WHERE f.nextFollowUpDate <= :date AND e.status NOT IN ('CONVERTED', 'LOST')")
     long countPendingFollowUps(@Param("date") LocalDateTime date);
 
+    @Query("SELECT COUNT(DISTINCT e) FROM Enquiry e JOIN e.followUps f WHERE f.nextFollowUpDate < :date AND e.status NOT IN ('CONVERTED', 'LOST')")
+    long countOverdueFollowUps(@Param("date") LocalDateTime date);
+
+    @Query("SELECT COUNT(DISTINCT e) FROM Enquiry e JOIN e.followUps f WHERE f.nextFollowUpDate >= :startDate AND f.nextFollowUpDate <= :endDate AND e.status NOT IN ('CONVERTED', 'LOST')")
+    long countDueTodayFollowUps(@Param("startDate") LocalDateTime startDate, @Param("endDate") LocalDateTime endDate);
+
     @Query("SELECT COUNT(DISTINCT e) FROM Enquiry e JOIN e.followUps f WHERE f.nextFollowUpDate IS NOT NULL AND e.status NOT IN ('CONVERTED', 'LOST')")
     long countAllPendingFollowUps();
+
+    @Query("SELECT COUNT(e) FROM Enquiry e WHERE e.status = com.assesment.backend.model.LeadStatus.FOLLOW_UP AND (e.followUps IS EMPTY OR NOT EXISTS (SELECT f FROM FollowUp f WHERE f.enquiry = e AND f.nextFollowUpDate IS NOT NULL))")
+    long countUnscheduledFollowUps();
 }
