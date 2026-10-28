@@ -54,11 +54,10 @@ public class DataInitializer implements CommandLineRunner {
         admin2.setRole(Role.ADMIN);
         userRepository.save(admin2);
         log.info("Created admin user: admin1@example.com / admin123");
-
     }
 
     private void initializeEnquiries() {
-        log.info("Initializing sample enquiries...");
+        log.info("Initializing sample enquiries covering all edge cases...");
 
         // Enquiry 1 - NEW
         Enquiry enquiry1 = new Enquiry();
@@ -69,7 +68,6 @@ public class DataInitializer implements CommandLineRunner {
         enquiry1.setMessage("I need a professional website for my business");
         enquiry1.setStatus(LeadStatus.NEW);
         enquiryRepository.save(enquiry1);
-        log.info("Created enquiry for: John Smith");
 
         // Enquiry 2 - CONTACTED
         Enquiry enquiry2 = new Enquiry();
@@ -80,59 +78,103 @@ public class DataInitializer implements CommandLineRunner {
         enquiry2.setMessage("Looking for a mobile app development team");
         enquiry2.setStatus(LeadStatus.CONTACTED);
         enquiryRepository.save(enquiry2);
-        log.info("Created enquiry for: Sarah Johnson");
 
-        // Enquiry 3 - FOLLOW_UP with follow-up notes
+        // Enquiry 3 - Edge Case 4: OVERDUE follow-up (Scheduled 2 days ago)
         Enquiry enquiry3 = new Enquiry();
-        enquiry3.setName("Michael Brown");
-        enquiry3.setEmail("michael.b@example.com");
-        enquiry3.setPhone("+1555555555");
-        enquiry3.setServiceOfInterest("E-commerce Solution");
-        enquiry3.setMessage("Need an e-commerce platform with payment integration");
+        enquiry3.setName("David Miller");
+        enquiry3.setEmail("david.m@example.com");
+        enquiry3.setPhone("+1555123456");
+        enquiry3.setServiceOfInterest("Custom Software Development");
+        enquiry3.setMessage("Need a custom CRM for managing real estate agents");
         enquiry3.setStatus(LeadStatus.FOLLOW_UP);
 
-        FollowUp followUp1 = new FollowUp();
-        followUp1.setEnquiry(enquiry3);
-        followUp1.setNotes("Initial discussion completed. Client interested in our proposal.");
-        followUp1.setNextFollowUpDate(LocalDateTime.now().plusDays(3));
-        enquiry3.getFollowUps().add(followUp1);
-
+        FollowUp overdueFollowUp = new FollowUp();
+        overdueFollowUp.setEnquiry(enquiry3);
+        overdueFollowUp.setNotes("Sent initial architecture deck. Need to follow up on feedback.");
+        overdueFollowUp.setNextFollowUpDate(LocalDateTime.now().minusDays(2).withHour(14).withMinute(0));
+        enquiry3.getFollowUps().add(overdueFollowUp);
         enquiryRepository.save(enquiry3);
-        log.info("Created enquiry for: Michael Brown with follow-up");
 
-        // Enquiry 4 - CONVERTED
+        // Enquiry 4 - Edge Case 3: DUE TODAY follow-up
         Enquiry enquiry4 = new Enquiry();
-        enquiry4.setName("Emily Davis");
-        enquiry4.setEmail("emily.d@example.com");
-        enquiry4.setPhone("+1444444444");
-        enquiry4.setServiceOfInterest("Cloud Services");
-        enquiry4.setMessage("Need cloud infrastructure setup and management");
-        enquiry4.setStatus(LeadStatus.CONVERTED);
+        enquiry4.setName("Priya Patel");
+        enquiry4.setEmail("priya.p@example.com");
+        enquiry4.setPhone("+1555987654");
+        enquiry4.setServiceOfInterest("UI/UX Design");
+        enquiry4.setMessage("Looking to revamp our SaaS product user experience");
+        enquiry4.setStatus(LeadStatus.FOLLOW_UP);
+
+        FollowUp dueTodayFollowUp = new FollowUp();
+        dueTodayFollowUp.setEnquiry(enquiry4);
+        dueTodayFollowUp.setNotes("Scheduled zoom call with product design team today.");
+        dueTodayFollowUp.setNextFollowUpDate(LocalDateTime.now().withHour(16).withMinute(30));
+        enquiry4.getFollowUps().add(dueTodayFollowUp);
         enquiryRepository.save(enquiry4);
-        log.info("Created enquiry for: Emily Davis (CONVERTED)");
 
-        // Enquiry 5 - LOST
+        // Enquiry 5 - Edge Case 2: Status is FOLLOW_UP, but the date is null (Unscheduled)
         Enquiry enquiry5 = new Enquiry();
-        enquiry5.setName("Robert Wilson");
-        enquiry5.setEmail("robert.w@example.com");
-        enquiry5.setPhone("+1666666666");
-        enquiry5.setServiceOfInterest("SEO Services");
-        enquiry5.setMessage("Interested in SEO optimization");
-        enquiry5.setStatus(LeadStatus.LOST);
+        enquiry5.setName("Alex Turner");
+        enquiry5.setEmail("alex.t@example.com");
+        enquiry5.setPhone("+1555777888");
+        enquiry5.setServiceOfInterest("Cloud Architecture & DevOps");
+        enquiry5.setMessage("Migrating our monolithic app to AWS Kubernetes");
+        enquiry5.setStatus(LeadStatus.FOLLOW_UP);
+
+        FollowUp unscheduledFollowUp = new FollowUp();
+        unscheduledFollowUp.setEnquiry(enquiry5);
+        unscheduledFollowUp.setNotes("Client requested proposal review but has not confirmed their meeting date yet.");
+        unscheduledFollowUp.setNextFollowUpDate(null); // Unscheduled!
+        enquiry5.getFollowUps().add(unscheduledFollowUp);
         enquiryRepository.save(enquiry5);
-        log.info("Created enquiry for: Robert Wilson (LOST)");
 
-        // Enquiry 6 - NEW
+        // Enquiry 6 - Edge Case 5: Rahul has become a customer (CONVERTED lead, excluded from active follow-ups)
         Enquiry enquiry6 = new Enquiry();
-        enquiry6.setName("Lisa Anderson");
-        enquiry6.setEmail("lisa.a@example.com");
-        enquiry6.setPhone("+1777777777");
-        enquiry6.setServiceOfInterest("Web Development");
-        enquiry6.setMessage("Looking for a modern website redesign");
-        enquiry6.setStatus(LeadStatus.NEW);
-        enquiryRepository.save(enquiry6);
-        log.info("Created enquiry for: Lisa Anderson");
+        enquiry6.setName("Rahul Sharma");
+        enquiry6.setEmail("rahul.sharma@example.com");
+        enquiry6.setPhone("+919876543210");
+        enquiry6.setServiceOfInterest("E-commerce Solution");
+        enquiry6.setMessage("Enterprise multi-vendor e-commerce platform");
+        enquiry6.setStatus(LeadStatus.CONVERTED);
 
-        log.info("Sample enquiries initialization completed");
+        FollowUp convertedFollowUp = new FollowUp();
+        convertedFollowUp.setEnquiry(enquiry6);
+        convertedFollowUp.setNotes("Contract signed! Rahul is now a paying customer. Project kickoff initiated.");
+        convertedFollowUp.setNextFollowUpDate(null); // Inactive/cleared upon conversion
+        enquiry6.getFollowUps().add(convertedFollowUp);
+        enquiryRepository.save(enquiry6);
+
+        // Enquiry 7 - Edge Case 6: Lost lead (Active reminder cancelled/excluded)
+        Enquiry enquiry7 = new Enquiry();
+        enquiry7.setName("Robert Wilson");
+        enquiry7.setEmail("robert.w@example.com");
+        enquiry7.setPhone("+1666666666");
+        enquiry7.setServiceOfInterest("Enterprise AI Integration");
+        enquiry7.setMessage("Interested in custom LLM automation");
+        enquiry7.setStatus(LeadStatus.LOST);
+
+        FollowUp lostFollowUp = new FollowUp();
+        lostFollowUp.setEnquiry(enquiry7);
+        lostFollowUp.setNotes("Budget constraints; decided to postpone project to next fiscal year. Reminders cancelled.");
+        lostFollowUp.setNextFollowUpDate(null);
+        enquiry7.getFollowUps().add(lostFollowUp);
+        enquiryRepository.save(enquiry7);
+
+        // Enquiry 8 - In Follow-up (Upcoming in 3 days)
+        Enquiry enquiry8 = new Enquiry();
+        enquiry8.setName("Michael Brown");
+        enquiry8.setEmail("michael.b@example.com");
+        enquiry8.setPhone("+1555555555");
+        enquiry8.setServiceOfInterest("Web Development");
+        enquiry8.setMessage("Need an e-commerce platform with payment integration");
+        enquiry8.setStatus(LeadStatus.FOLLOW_UP);
+
+        FollowUp upcomingFollowUp = new FollowUp();
+        upcomingFollowUp.setEnquiry(enquiry8);
+        upcomingFollowUp.setNotes("Proposal sent. Follow up scheduled for next week.");
+        upcomingFollowUp.setNextFollowUpDate(LocalDateTime.now().plusDays(3).withHour(11).withMinute(0));
+        enquiry8.getFollowUps().add(upcomingFollowUp);
+        enquiryRepository.save(enquiry8);
+
+        log.info("Sample enquiries with all edge cases initialized successfully");
     }
 }
