@@ -152,6 +152,22 @@ To access the administrative Lead Management Dashboard (`http://localhost:5173/a
 
 ---
 
+## 📸 Application Screenshots
+
+### Landing Page
+![Landing Page](screenshots/landing_page.png)
+
+### Enquiry Form
+![Enquiry Form](screenshots/enquiry.png)
+
+### Admin Login
+![Admin Login](screenshots/admin_login.png)
+
+### Admin Dashboard
+![Admin Dashboard](screenshots/admin_dashboard.png)
+
+---
+
 ## 📡 REST API Reference
 
 All responses follow a consistent envelope: `{ "message": "...", "data": ..., "status": 200 }`.
