@@ -1,6 +1,7 @@
 package com.assesment.backend.service;
 
 import com.assesment.backend.dto.*;
+import com.assesment.backend.execption.BadRequestException;
 import com.assesment.backend.execption.ResourceNotFoundException;
 import com.assesment.backend.mapper.EnquiryMapper;
 import com.assesment.backend.mapper.FollowUpMapper;
@@ -73,7 +74,28 @@ public class EnquiryServiceImpl implements EnquiryService {
         Enquiry enquiry = enquiryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
 
-        LeadStatus oldStatus = enquiry.getStatus();
+        // Mandatory Follow-up Date Rule: When setting status to FOLLOW_UP, follow-up date is mandatory
+        if (request.getStatus() == LeadStatus.FOLLOW_UP) {
+            boolean hasExistingUpcomingFollowUp = enquiry.getFollowUps() != null && enquiry.getFollowUps().stream()
+                    .anyMatch(f -> f.getNextFollowUpDate() != null && !f.getNextFollowUpDate().isBefore(LocalDateTime.now()));
+
+            if (request.getNextFollowUpDate() == null && !hasExistingUpcomingFollowUp) {
+                throw new BadRequestException("Next follow-up date is mandatory when status is set to FOLLOW_UP");
+            }
+
+            // If a date was provided with the status update, record it as a follow-up
+            if (request.getNextFollowUpDate() != null) {
+                FollowUp followUp = new FollowUp();
+                followUp.setEnquiry(enquiry);
+                followUp.setNotes(request.getNotes() != null && !request.getNotes().isBlank()
+                        ? request.getNotes()
+                        : "Status updated to FOLLOW_UP. Next follow-up scheduled.");
+                followUp.setNextFollowUpDate(request.getNextFollowUpDate());
+                followUpRepository.save(followUp);
+                enquiry.getFollowUps().add(followUp);
+            }
+        }
+
         enquiry.setStatus(request.getStatus());
 
         // Edge Cases 5 & 6: Converted / Lost lead -> Exclude from active follow-ups & cancel active reminders
@@ -96,6 +118,11 @@ public class EnquiryServiceImpl implements EnquiryService {
     public EnquiryResponse addFollowUp(Long id, FollowUpRequest request) {
         Enquiry enquiry = enquiryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
+
+        // Mandatory Follow-up Date Rule: When status is FOLLOW_UP, date is mandatory
+        if (enquiry.getStatus() == LeadStatus.FOLLOW_UP && request.getNextFollowUpDate() == null) {
+            throw new BadRequestException("Next follow-up date is mandatory when status is FOLLOW_UP");
+        }
 
         FollowUp followUp = followUpMapper.toEntity(request);
         followUp.setEnquiry(enquiry);
