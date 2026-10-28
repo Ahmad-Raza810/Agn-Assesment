@@ -109,8 +109,8 @@ public class LeadController {
         ApiResponse<Void> response = new ApiResponse<>(
                 "Lead deleted successfully",
                 null,
-                HttpStatus.OK.value()
+                HttpStatus.NO_CONTENT.value()
         );
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 }

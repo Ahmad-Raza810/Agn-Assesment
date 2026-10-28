@@ -68,8 +68,8 @@ public class AuthController {
         ApiResponse<Void> response = new ApiResponse<>(
                 "Logged out successfully",
                 null,
-                HttpStatus.OK.value()
+                HttpStatus.NO_CONTENT.value()
         );
-        return ResponseEntity.ok(response);
+        return ResponseEntity.status(HttpStatus.NO_CONTENT).body(response);
     }
 }
