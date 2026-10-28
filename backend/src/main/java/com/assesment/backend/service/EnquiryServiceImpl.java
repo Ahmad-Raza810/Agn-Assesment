@@ -17,6 +17,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+
 @Service
 @RequiredArgsConstructor
 @Transactional
@@ -70,7 +72,22 @@ public class EnquiryServiceImpl implements EnquiryService {
     public EnquiryResponse updateStatus(Long id, UpdateStatusRequest request) {
         Enquiry enquiry = enquiryRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Enquiry not found with id: " + id));
+
+        LeadStatus oldStatus = enquiry.getStatus();
         enquiry.setStatus(request.getStatus());
+
+        // Edge Cases 5 & 6: Converted / Lost lead -> Exclude from active follow-ups & cancel active reminders
+        if (request.getStatus() == LeadStatus.CONVERTED || request.getStatus() == LeadStatus.LOST) {
+            LocalDateTime now = LocalDateTime.now();
+            if (enquiry.getFollowUps() != null) {
+                for (FollowUp f : enquiry.getFollowUps()) {
+                    if (f.getNextFollowUpDate() != null && f.getNextFollowUpDate().isAfter(now)) {
+                        f.setNextFollowUpDate(null);
+                    }
+                }
+            }
+        }
+
         Enquiry updatedEnquiry = enquiryRepository.save(enquiry);
         return enquiryMapper.toDto(updatedEnquiry);
     }
@@ -100,6 +117,10 @@ public class EnquiryServiceImpl implements EnquiryService {
     @Override
     public DashboardSummary getDashboardSummary() {
         DashboardSummary summary = new DashboardSummary();
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startOfDay = now.toLocalDate().atStartOfDay();
+        LocalDateTime endOfDay = now.toLocalDate().atTime(23, 59, 59);
+
         summary.setTotalEnquiries(enquiryRepository.count());
         summary.setPendingFollowUps(enquiryRepository.countAllPendingFollowUps());
         summary.setConvertedLeads(enquiryRepository.countByStatus(LeadStatus.CONVERTED));
@@ -107,6 +128,12 @@ public class EnquiryServiceImpl implements EnquiryService {
         summary.setContactedLeads(enquiryRepository.countByStatus(LeadStatus.CONTACTED));
         summary.setFollowUpLeads(enquiryRepository.countByStatus(LeadStatus.FOLLOW_UP));
         summary.setLostLeads(enquiryRepository.countByStatus(LeadStatus.LOST));
+
+        // Edge case counts: Overdue, Due Today, and Unscheduled Follow-ups
+        summary.setOverdueFollowUps(enquiryRepository.countOverdueFollowUps(startOfDay));
+        summary.setDueTodayFollowUps(enquiryRepository.countDueTodayFollowUps(startOfDay, endOfDay));
+        summary.setUnscheduledFollowUps(enquiryRepository.countUnscheduledFollowUps());
+
         return summary;
     }
 }
