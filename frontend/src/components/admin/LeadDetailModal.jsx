@@ -35,6 +35,13 @@ export default function LeadDetailModal({
 
   const handleStatusChange = async (newStatus) => {
     if (newStatus === lead.status) return;
+
+    // FOLLOW_UP requires a scheduled date — open the Add Follow-up modal instead
+    if (newStatus === 'FOLLOW_UP') {
+      onOpenAddFollowUp(lead);
+      return;
+    }
+
     setIsUpdatingStatus(true);
     try {
       const updated = await leadService.updateLeadStatus(lead.id, newStatus);
