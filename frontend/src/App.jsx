@@ -39,7 +39,6 @@ export default function App() {
                   }
                 />
 
-                {/* 404 Catch-All */}
                 <Route path="*" element={<NotFoundPage />} />
               </Routes>
             </main>

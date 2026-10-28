@@ -64,7 +64,6 @@ export default function LeadTable({
     }
   };
 
-  // Comprehensive Edge-Case Status Evaluator
   const getFollowUpStatus = (lead) => {
     // Edge Case 5: Converted lead -> Exclude from active follow-ups
     if (lead.status === 'CONVERTED') {
@@ -78,7 +77,6 @@ export default function LeadTable({
       };
     }
 
-    // Edge Case 6: Lost lead -> Cancel or exclude active reminder
     if (lead.status === 'LOST') {
       return {
         type: 'LOST',
@@ -94,7 +92,6 @@ export default function LeadTable({
     const withDates = followUps.filter((f) => f.nextFollowUpDate);
     const latest = withDates.length > 0 ? withDates[withDates.length - 1] : null;
 
-    // Edge Case 2: Status is FOLLOW_UP, but the date is null -> Unscheduled
     if (!latest || !latest.nextFollowUpDate) {
       if (lead.status === 'FOLLOW_UP') {
         return {
@@ -130,7 +127,9 @@ export default function LeadTable({
     // Calculate days difference
     let daysDiff = 0;
     if (isPast) {
-      const diffTime = Math.abs(now.setHours(0, 0, 0, 0) - new Date(followUpDate).setHours(0, 0, 0, 0));
+      const startOfToday = new Date().setHours(0, 0, 0, 0);
+      const startOfFollowUp = new Date(followUpDate).setHours(0, 0, 0, 0);
+      const diffTime = Math.abs(startOfToday - startOfFollowUp);
       daysDiff = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
     }
 
@@ -147,7 +146,6 @@ export default function LeadTable({
       };
     }
 
-    // Edge Case 4: Overdue
     if (isPast) {
       return {
         type: 'OVERDUE',
@@ -160,10 +158,9 @@ export default function LeadTable({
       };
     }
 
-    // Upcoming future follow-up
     return {
       type: 'UPCOMING',
-      badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+      badgeClass: 'bg-slate-100 text-slate-700 border-slate-200',
       icon: Clock,
       label: `Next: ${formatDate(latest.nextFollowUpDate)}`,
       subtext: `${formatTime(latest.nextFollowUpDate)}`,
@@ -224,16 +221,15 @@ export default function LeadTable({
                   key={lead.id}
                   className="hover:bg-slate-50/70 transition-colors group"
                 >
-                  {/* Contact info */}
                   <td className="py-4 px-4 sm:px-6">
                     <div className="flex items-start gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-indigo-50 text-indigo-700 flex items-center justify-center font-bold text-xs ring-1 ring-indigo-100 flex-shrink-0 mt-0.5">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 text-slate-700 flex items-center justify-center font-bold text-xs ring-1 ring-slate-200 flex-shrink-0 mt-0.5">
                         {lead.name ? lead.name.charAt(0).toUpperCase() : '?'}
                       </div>
                       <div className="min-w-0">
                         <button
                           onClick={() => onViewLead(lead)}
-                          className="font-bold text-slate-900 hover:text-indigo-600 transition text-left block truncate max-w-[200px]"
+                          className="font-bold text-slate-900 hover:text-slate-600 transition text-left block truncate max-w-[200px]"
                         >
                           {lead.name}
                         </button>
@@ -257,7 +253,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* Service of Interest & preview */}
                   <td className="py-4 px-4">
                     <span className="inline-block px-2.5 py-1 rounded-lg text-xs font-semibold bg-slate-100 text-slate-800 border border-slate-200/60">
                       {lead.serviceOfInterest}
@@ -267,13 +262,12 @@ export default function LeadTable({
                     </p>
                   </td>
 
-                  {/* Status Dropdown / Badge */}
                   <td className="py-4 px-4">
                     <div className="relative inline-block">
                       <select
                         value={lead.status}
                         onChange={(e) => onQuickStatusChange(lead.id, e.target.value)}
-                        className="text-xs font-semibold rounded-full px-2.5 py-1 border transition cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-indigo-100 bg-white"
+                        className="text-xs font-semibold rounded-full px-2.5 py-1 border transition cursor-pointer appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-slate-100 bg-white"
                         style={{
                           borderColor:
                             lead.status === 'NEW'
@@ -301,7 +295,6 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* Follow-up status with edge-case badges */}
                   <td className="py-4 px-4">
                     <div>
                       <div
@@ -317,7 +310,6 @@ export default function LeadTable({
                         </span>
                       )}
 
-                      {/* Shortcut to schedule date if unscheduled */}
                       {statusMeta.type === 'UNSCHEDULED' && (
                         <button
                           onClick={() => onAddFollowUp(lead)}
@@ -330,17 +322,15 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* Date Created */}
                   <td className="py-4 px-4 text-xs text-slate-500 whitespace-nowrap">
                     {formatDate(lead.createdAt)}
                   </td>
 
-                  {/* Actions */}
                   <td className="py-4 px-4 sm:px-6 text-right whitespace-nowrap">
                     <div className="flex items-center justify-end gap-1">
                       <button
                         onClick={() => onViewLead(lead)}
-                        className="p-1.5 rounded-lg text-slate-500 hover:text-indigo-600 hover:bg-indigo-50 transition"
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-slate-600 hover:bg-slate-100 transition"
                         title="View details & timeline"
                       >
                         <Eye className="w-4 h-4" />
@@ -370,7 +360,6 @@ export default function LeadTable({
         </table>
       </div>
 
-      {/* Pagination Footer */}
       <div className="border-t border-slate-100 px-4 sm:px-6 py-3.5 bg-slate-50/50 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs text-slate-500">
         <div>
           Showing page <span className="font-semibold text-slate-800">{page + 1}</span> of{' '}
@@ -395,7 +384,7 @@ export default function LeadTable({
                 onClick={() => onPageChange(pageNum)}
                 className={`w-7 h-7 rounded-lg font-medium transition ${
                   page === pageNum
-                    ? 'bg-indigo-600 text-white font-bold shadow-xs'
+                    ? 'bg-slate-900 text-white font-bold shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >

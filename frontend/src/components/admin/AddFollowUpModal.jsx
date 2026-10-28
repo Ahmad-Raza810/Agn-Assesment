@@ -12,7 +12,6 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Edge Case 1: Check if selected date is in the past
   const isPastDate = nextFollowUpDate ? new Date(nextFollowUpDate) < new Date() : false;
 
   const handleQuickPreset = (offsetHours, offsetDays = 0) => {
@@ -21,7 +20,6 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
     if (offsetHours > 0) target.setHours(target.getHours() + offsetHours);
     else target.setHours(10, 0, 0, 0);
 
-    // Format for datetime-local: YYYY-MM-DDTHH:mm
     const year = target.getFullYear();
     const month = String(target.getMonth() + 1).padStart(2, '0');
     const day = String(target.getDate()).padStart(2, '0');
@@ -38,13 +36,11 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
       return;
     }
 
-    // Follow-up date is mandatory when lead status is FOLLOW_UP
-    if (lead.status === 'FOLLOW_UP' && !nextFollowUpDate) {
-      setError('Next follow-up date is required when status is Follow-up.');
+    if (!nextFollowUpDate) {
+      setError('Next follow-up date is required.');
       return;
     }
 
-    // Edge Case 1: Past date selected -> requires confirmation or rejection
     if (isPastDate && !allowPastDate) {
       setError('Selected date is in the past. Check the confirmation box below to save as an Overdue follow-up.');
       return;
@@ -62,6 +58,8 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
       
       if (isPastDate) {
         warning('Follow-up recorded and immediately flagged as OVERDUE.');
+      } else if (lead.status !== 'FOLLOW_UP') {
+        success('Follow-up added and lead status advanced to Follow-up!');
       } else {
         success('Follow-up record added successfully!');
       }
@@ -100,11 +98,10 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
           </div>
           <div>
             <span className="text-slate-400">Current Status: </span>
-            <span className="font-semibold text-indigo-600">{lead.status}</span>
+            <span className="font-semibold text-slate-800">{lead.status}</span>
           </div>
         </div>
 
-        {/* Follow-up Notes */}
         <div>
           <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
             Follow-up Notes <span className="text-rose-500">*</span>
@@ -121,7 +118,7 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
               className={`w-full p-3 rounded-xl border text-sm focus:outline-none focus:ring-2 ${
                 error
                   ? 'border-rose-300 focus:ring-rose-100 bg-rose-50/20'
-                  : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-100'
+                  : 'border-slate-200 focus:border-slate-400 focus:ring-slate-100'
               }`}
             />
           </div>
@@ -132,12 +129,7 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
         <div>
           <div className="flex items-center justify-between mb-1.5">
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
-              Next Follow-up Date & Time{' '}
-              {lead.status === 'FOLLOW_UP' ? (
-                <span className="text-rose-500 font-normal lowercase">*</span>
-              ) : (
-                <span className="text-slate-400 font-normal lowercase">(optional)</span>
-              )}
+              Next Follow-up Date & Time <span className="text-rose-500">*</span>
             </label>
             <span className="text-[11px] text-slate-400">Quick presets:</span>
           </div>
@@ -147,28 +139,28 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
             <button
               type="button"
               onClick={() => handleQuickPreset(2)}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-slate-800 text-slate-600 transition"
             >
               Today (+2h)
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset(0, 1)}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-slate-800 text-slate-600 transition"
             >
               Tomorrow
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset(0, 3)}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-slate-800 text-slate-600 transition"
             >
               In 3 Days
             </button>
             <button
               type="button"
               onClick={() => handleQuickPreset(0, 7)}
-              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-slate-800 text-slate-600 transition"
             >
               Next Week
             </button>
@@ -185,12 +177,11 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
               className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 ${
                 isPastDate
                   ? 'border-amber-300 bg-amber-50/30 focus:border-amber-500 focus:ring-amber-100'
-                  : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-100'
+                  : 'border-slate-200 focus:border-slate-400 focus:ring-slate-100'
               }`}
             />
           </div>
 
-          {/* Edge Case 1: Past Date Warning & Confirmation */}
           {isPastDate && (
             <div className="mt-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
               <div className="flex items-start gap-2 text-xs text-amber-900">
@@ -213,15 +204,14 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
             </div>
           )}
 
-          {!nextFollowUpDate && lead.status === 'FOLLOW_UP' && (
+          {!nextFollowUpDate && (
             <p className="text-[11px] text-rose-600 mt-1 font-medium flex items-center gap-1">
               <span>⚠</span>
-              <span>Follow-up date is required when status is Follow-up.</span>
+              <span>Follow-up date is required.</span>
             </p>
           )}
         </div>
 
-        {/* Action buttons */}
         <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100">
           <button
             type="button"
@@ -237,7 +227,7 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
             className={`px-5 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition flex items-center gap-2 disabled:opacity-50 ${
               isPastDate
                 ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'
-                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+                : 'bg-slate-900 hover:bg-slate-800 shadow-sm'
             }`}
           >
             {isSubmitting ? (

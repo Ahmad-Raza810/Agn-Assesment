@@ -42,7 +42,7 @@ export default function ConfirmModal({
             className={`px-4 py-2 text-sm font-medium text-white rounded-lg transition disabled:opacity-50 flex items-center gap-2 ${
               isDestructive
                 ? 'bg-rose-600 hover:bg-rose-700 shadow-sm shadow-rose-200'
-                : 'bg-indigo-600 hover:bg-indigo-700 shadow-sm shadow-indigo-200'
+                : 'bg-slate-900 hover:bg-slate-800 shadow-sm shadow-indigo-200'
             }`}
           >
             {isLoading && (

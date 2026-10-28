@@ -49,7 +49,6 @@ export function ToastProvider({ children }) {
   return (
     <ToastContext.Provider value={{ addToast, removeToast, success, error, info, warning }}>
       {children}
-      {/* Toast container floating on top right */}
       <div className="fixed top-5 right-5 z-50 flex flex-col gap-2.5 max-w-sm w-full pointer-events-none">
         {toasts.map((toast) => {
           const config = {

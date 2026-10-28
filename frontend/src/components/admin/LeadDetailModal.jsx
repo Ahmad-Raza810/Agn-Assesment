@@ -36,7 +36,6 @@ export default function LeadDetailModal({
   const handleStatusChange = async (newStatus) => {
     if (newStatus === lead.status) return;
 
-    // FOLLOW_UP requires a scheduled date — open the Add Follow-up modal instead
     if (newStatus === 'FOLLOW_UP') {
       onOpenAddFollowUp(lead);
       return;
@@ -81,10 +80,9 @@ export default function LeadDetailModal({
       maxWidth="max-w-2xl"
     >
       <div className="space-y-6">
-        {/* Header summary & status quick change */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-indigo-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-indigo-100">
+            <div className="w-12 h-12 rounded-2xl bg-slate-900 text-white flex items-center justify-center font-bold text-lg shadow-sm">
               {lead.name ? lead.name.charAt(0).toUpperCase() : 'L'}
             </div>
             <div>
@@ -99,7 +97,7 @@ export default function LeadDetailModal({
               value={lead.status}
               disabled={isUpdatingStatus}
               onChange={(e) => handleStatusChange(e.target.value)}
-              className="text-xs font-semibold rounded-xl px-3 py-1.5 border border-slate-200 bg-white shadow-xs focus:ring-2 focus:ring-indigo-100 cursor-pointer disabled:opacity-50"
+              className="text-xs font-semibold rounded-xl px-3 py-1.5 border border-slate-200 bg-white shadow-xs focus:ring-2 focus:ring-slate-100 cursor-pointer disabled:opacity-50"
             >
               {STATUS_OPTIONS.map((st) => (
                 <option key={st} value={st}>
@@ -110,7 +108,6 @@ export default function LeadDetailModal({
           </div>
         </div>
 
-        {/* Edge Cases 2, 5 & 6 Context Notice Banners */}
         {lead.status === 'CONVERTED' && (
           <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-xs text-emerald-800">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
@@ -146,7 +143,6 @@ export default function LeadDetailModal({
           </div>
         )}
 
-        {/* Contact info grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
           <div className="p-3.5 rounded-xl border border-slate-100 bg-white flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center flex-shrink-0">
@@ -154,7 +150,7 @@ export default function LeadDetailModal({
             </div>
             <div className="min-w-0">
               <span className="text-slate-400 font-medium block">Email Address</span>
-              <a href={`mailto:${lead.email}`} className="font-semibold text-slate-800 hover:text-indigo-600 truncate block">
+              <a href={`mailto:${lead.email}`} className="font-semibold text-slate-800 hover:text-slate-600 truncate block">
                 {lead.email}
               </a>
             </div>
@@ -178,7 +174,7 @@ export default function LeadDetailModal({
             </div>
             <div className="min-w-0">
               <span className="text-slate-400 font-medium block">Service of Interest</span>
-              <span className="font-semibold text-indigo-700 truncate block">
+              <span className="font-semibold text-slate-800 truncate block">
                 {lead.serviceOfInterest}
               </span>
             </div>
@@ -197,7 +193,6 @@ export default function LeadDetailModal({
           </div>
         </div>
 
-        {/* Enquiry Message */}
         <div>
           <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
             <MessageSquare className="w-3.5 h-3.5 text-slate-400" />
@@ -208,7 +203,6 @@ export default function LeadDetailModal({
           </div>
         </div>
 
-        {/* Follow-up History & Timeline */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h5 className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
@@ -217,7 +211,7 @@ export default function LeadDetailModal({
             </h5>
             <button
               onClick={() => onOpenAddFollowUp(lead)}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-lg transition"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-slate-700 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-lg transition"
             >
               <PlusCircle className="w-3.5 h-3.5" />
               <span>Add Follow-up Note</span>
@@ -234,8 +228,7 @@ export default function LeadDetailModal({
 
                 return (
                   <div key={fu.id || idx} className="relative pl-9 group">
-                    {/* Timeline bullet dot */}
-                    <div className="absolute left-2.5 top-2 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white shadow-xs" />
+                    <div className="absolute left-2.5 top-2 w-3 h-3 rounded-full bg-slate-800 border-2 border-white shadow-xs" />
 
                     <div className="p-3.5 rounded-xl border border-slate-100 bg-white shadow-xs">
                       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
@@ -274,8 +267,8 @@ export default function LeadDetailModal({
                               <span>Overdue: {formatDate(fu.nextFollowUpDate)}</span>
                             </div>
                           ) : (
-                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 text-[11px] font-semibold">
-                              <Calendar className="w-3 h-3 text-indigo-600" />
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-slate-800 border border-indigo-100 text-[11px] font-semibold">
+                              <Calendar className="w-3 h-3 text-slate-600" />
                               <span>Next scheduled: {formatDate(fu.nextFollowUpDate)}</span>
                             </div>
                           )}
@@ -291,7 +284,7 @@ export default function LeadDetailModal({
               <p className="text-xs text-slate-500">No follow-up notes logged yet for this enquiry.</p>
               <button
                 onClick={() => onOpenAddFollowUp(lead)}
-                className="mt-2 text-xs font-semibold text-indigo-600 hover:underline"
+                className="mt-2 text-xs font-semibold text-slate-600 hover:underline"
               >
                 Log the first follow-up note &rarr;
               </button>
@@ -299,7 +292,6 @@ export default function LeadDetailModal({
           )}
         </div>
 
-        {/* Modal Close */}
         <div className="pt-4 border-t border-slate-100 flex justify-end">
           <button
             onClick={onClose}

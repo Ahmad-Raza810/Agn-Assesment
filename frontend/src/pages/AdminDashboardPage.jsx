@@ -9,16 +9,13 @@ import { leadService } from '../services/leadService';
 import { useToast } from '../context/ToastContext';
 import { RefreshCw, Download, Plus, LayoutDashboard, Sparkles } from 'lucide-react';
 
-const SPECIAL_FILTERS = ['PENDING_FOLLOWUP', 'DUE_TODAY', 'OVERDUE', 'UNSCHEDULED'];
 
 export default function AdminDashboardPage() {
   const { success, error: toastError } = useToast();
 
-  // Dashboard KPI data
   const [summary, setSummary] = useState(null);
   const [isSummaryLoading, setIsSummaryLoading] = useState(true);
 
-  // Leads list and pagination state
   const [leads, setLeads] = useState([]);
   const [isLeadsLoading, setIsLeadsLoading] = useState(true);
   const [page, setPage] = useState(0);
@@ -28,19 +25,16 @@ export default function AdminDashboardPage() {
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortDir, setSortDir] = useState('desc');
 
-  // Search & Filters state
   const [searchTerm, setSearchTerm] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedService, setSelectedService] = useState('All Services');
   const [selectedStatus, setSelectedStatus] = useState('ALL');
 
-  // Modals state
   const [viewingLead, setViewingLead] = useState(null);
   const [followUpLead, setFollowUpLead] = useState(null);
   const [deletingLead, setDeletingLead] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  // Debounce search input
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(searchTerm);
@@ -49,7 +43,6 @@ export default function AdminDashboardPage() {
     return () => clearTimeout(timer);
   }, [searchTerm]);
 
-  // Fetch Dashboard Summary
   const fetchSummary = useCallback(async () => {
     setIsSummaryLoading(true);
     try {
@@ -62,22 +55,20 @@ export default function AdminDashboardPage() {
     }
   }, []);
 
-  // Fetch Leads (Filtered or All)
   const fetchLeads = useCallback(async () => {
     setIsLeadsLoading(true);
     try {
-      const isSpecialFilter = SPECIAL_FILTERS.includes(selectedStatus);
       const isFiltered =
         debouncedSearch.trim() !== '' ||
         (selectedService !== 'All Services' && selectedService !== '') ||
-        (selectedStatus !== 'ALL' && !isSpecialFilter);
+        selectedStatus !== 'ALL';
 
       let data;
       if (isFiltered) {
         data = await leadService.searchLeads({
-          name: debouncedSearch,
-          service: selectedService === 'All Services' ? '' : selectedService,
-          status: isSpecialFilter || selectedStatus === 'ALL' ? null : selectedStatus,
+          name: debouncedSearch.trim() || null,
+          service: selectedService === 'All Services' ? null : selectedService,
+          status: selectedStatus === 'ALL' ? null : selectedStatus,
           page,
           size,
           sortBy,
@@ -92,47 +83,9 @@ export default function AdminDashboardPage() {
         });
       }
 
-      let content = data.content || [];
-      const now = new Date();
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-      const endOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
-
-      // Handle Edge-Case Follow-up Filter Categories
-      if (selectedStatus === 'PENDING_FOLLOWUP') {
-        content = content.filter(
-          (l) =>
-            l.status !== 'CONVERTED' &&
-            l.status !== 'LOST' &&
-            l.followUps &&
-            l.followUps.some((f) => f.nextFollowUpDate != null)
-        );
-      } else if (selectedStatus === 'DUE_TODAY') {
-        content = content.filter((l) => {
-          if (l.status === 'CONVERTED' || l.status === 'LOST') return false;
-          const withDates = (l.followUps || []).filter((f) => f.nextFollowUpDate);
-          if (withDates.length === 0) return false;
-          const latest = new Date(withDates[withDates.length - 1].nextFollowUpDate);
-          return latest >= startOfToday && latest <= endOfToday;
-        });
-      } else if (selectedStatus === 'OVERDUE') {
-        content = content.filter((l) => {
-          if (l.status === 'CONVERTED' || l.status === 'LOST') return false;
-          const withDates = (l.followUps || []).filter((f) => f.nextFollowUpDate);
-          if (withDates.length === 0) return false;
-          const latest = new Date(withDates[withDates.length - 1].nextFollowUpDate);
-          return latest < startOfToday;
-        });
-      } else if (selectedStatus === 'UNSCHEDULED') {
-        content = content.filter((l) => {
-          if (l.status !== 'FOLLOW_UP') return false;
-          const withDates = (l.followUps || []).filter((f) => f.nextFollowUpDate);
-          return withDates.length === 0;
-        });
-      }
-
-      setLeads(content);
+      setLeads(data.content || []);
       setTotalPages(data.totalPages || 0);
-      setTotalElements(isSpecialFilter ? content.length : (data.totalElements || 0));
+      setTotalElements(data.totalElements || 0);
     } catch (err) {
       console.error('Fetch leads error:', err);
       toastError(err.response?.data?.message || 'Failed to fetch enquiries.');
@@ -228,16 +181,12 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-slate-50/60 pb-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8">
-        {/* Page Top Heading & Refresh Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                 Enquiry & Lead Management
               </h1>
-              <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-indigo-100 text-indigo-700">
-                Live CRM
-              </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
               Review visitor enquiries, track sales pipeline stages, and manage customer follow-ups.
@@ -256,7 +205,6 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Dashboard Summary Statistics Cards with Edge Cases */}
         <DashboardStats
           summary={summary}
           selectedStatus={selectedStatus}
@@ -264,7 +212,6 @@ export default function AdminDashboardPage() {
           isLoading={isSummaryLoading}
         />
 
-        {/* Search & Filters */}
         <LeadFilters
           searchTerm={searchTerm}
           onSearchChange={setSearchTerm}
@@ -282,7 +229,6 @@ export default function AdminDashboardPage() {
           totalResults={totalElements}
         />
 
-        {/* Leads Table */}
         <LeadTable
           leads={leads}
           isLoading={isLeadsLoading}
@@ -299,7 +245,6 @@ export default function AdminDashboardPage() {
           onSort={handleSort}
         />
 
-        {/* Detail Modal */}
         <LeadDetailModal
           isOpen={!!viewingLead}
           onClose={() => setViewingLead(null)}
@@ -312,7 +257,6 @@ export default function AdminDashboardPage() {
           onOpenAddFollowUp={(lead) => setFollowUpLead(lead)}
         />
 
-        {/* Add Follow-up Modal */}
         <AddFollowUpModal
           isOpen={!!followUpLead}
           onClose={() => setFollowUpLead(null)}
@@ -320,7 +264,6 @@ export default function AdminDashboardPage() {
           onFollowUpAdded={handleFollowUpAdded}
         />
 
-        {/* Confirm Delete Modal */}
         <ConfirmModal
           isOpen={!!deletingLead}
           onClose={() => setDeletingLead(null)}
