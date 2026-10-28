@@ -2,19 +2,45 @@ import React, { useState } from 'react';
 import Modal from '../common/Modal';
 import { leadService } from '../../services/leadService';
 import { useToast } from '../../context/ToastContext';
-import { Calendar, MessageSquare, Clock, PlusCircle } from 'lucide-react';
+import { Calendar, MessageSquare, Clock, PlusCircle, AlertTriangle, AlertCircle, Sparkles } from 'lucide-react';
 
 export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdded }) {
-  const { success, error: toastError } = useToast();
+  const { success, error: toastError, warning } = useToast();
   const [notes, setNotes] = useState('');
   const [nextFollowUpDate, setNextFollowUpDate] = useState('');
+  const [allowPastDate, setAllowPastDate] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
+
+  // Edge Case 1: Check if selected date is in the past
+  const isPastDate = nextFollowUpDate ? new Date(nextFollowUpDate) < new Date() : false;
+
+  const handleQuickPreset = (offsetHours, offsetDays = 0) => {
+    const target = new Date();
+    if (offsetDays > 0) target.setDate(target.getDate() + offsetDays);
+    if (offsetHours > 0) target.setHours(target.getHours() + offsetHours);
+    else target.setHours(10, 0, 0, 0);
+
+    // Format for datetime-local: YYYY-MM-DDTHH:mm
+    const year = target.getFullYear();
+    const month = String(target.getMonth() + 1).padStart(2, '0');
+    const day = String(target.getDate()).padStart(2, '0');
+    const hours = String(target.getHours()).padStart(2, '0');
+    const minutes = String(target.getMinutes()).padStart(2, '0');
+    setNextFollowUpDate(`${year}-${month}-${day}T${hours}:${minutes}`);
+    setError('');
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!notes.trim()) {
       setError('Please enter follow-up notes');
+      return;
+    }
+
+    // Edge Case 1: Past date selected -> requires confirmation or rejection
+    if (isPastDate && !allowPastDate) {
+      setError('Selected date is in the past. Check the confirmation box below to save as an Overdue follow-up.');
       return;
     }
 
@@ -27,9 +53,18 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
       };
 
       const updatedLead = await leadService.addFollowUp(lead.id, payload);
-      success('Follow-up record added successfully!');
+      
+      if (isPastDate) {
+        warning('Follow-up recorded and immediately flagged as OVERDUE.');
+      } else if (!nextFollowUpDate && lead.status === 'FOLLOW_UP') {
+        warning('Follow-up recorded. Note: Next follow-up date remains unscheduled.');
+      } else {
+        success('Follow-up record added successfully!');
+      }
+
       setNotes('');
       setNextFollowUpDate('');
+      setAllowPastDate(false);
       onFollowUpAdded(updatedLead);
       onClose();
     } catch (err) {
@@ -91,20 +126,89 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
 
         {/* Next Follow-up Date */}
         <div>
-          <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1.5">
-            Next Follow-up Date & Time <span className="text-slate-400 font-normal lowercase">(optional)</span>
-          </label>
+          <div className="flex items-center justify-between mb-1.5">
+            <label className="block text-xs font-bold uppercase tracking-wider text-slate-700">
+              Next Follow-up Date & Time <span className="text-slate-400 font-normal lowercase">(optional)</span>
+            </label>
+            <span className="text-[11px] text-slate-400">Quick presets:</span>
+          </div>
+
+          {/* Quick Preset Buttons */}
+          <div className="flex flex-wrap items-center gap-1.5 mb-2">
+            <button
+              type="button"
+              onClick={() => handleQuickPreset(2)}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+            >
+              Today (+2h)
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPreset(0, 1)}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+            >
+              Tomorrow
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPreset(0, 3)}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+            >
+              In 3 Days
+            </button>
+            <button
+              type="button"
+              onClick={() => handleQuickPreset(0, 7)}
+              className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 hover:bg-indigo-50 hover:text-indigo-600 text-slate-600 transition"
+            >
+              Next Week
+            </button>
+          </div>
+
           <div className="relative">
             <input
               type="datetime-local"
               value={nextFollowUpDate}
-              onChange={(e) => setNextFollowUpDate(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-100 focus:border-indigo-500"
+              onChange={(e) => {
+                setNextFollowUpDate(e.target.value);
+                if (error) setError('');
+              }}
+              className={`w-full px-3.5 py-2.5 rounded-xl border text-sm focus:outline-none focus:ring-2 ${
+                isPastDate
+                  ? 'border-amber-300 bg-amber-50/30 focus:border-amber-500 focus:ring-amber-100'
+                  : 'border-slate-200 focus:border-indigo-500 focus:ring-indigo-100'
+              }`}
             />
           </div>
-          <p className="text-[11px] text-slate-400 mt-1">
-            Setting a date will flag this enquiry in the pending follow-ups dashboard.
-          </p>
+
+          {/* Edge Case 1: Past Date Warning & Confirmation */}
+          {isPastDate && (
+            <div className="mt-2.5 p-3 bg-amber-50 border border-amber-200 rounded-xl space-y-2">
+              <div className="flex items-start gap-2 text-xs text-amber-900">
+                <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold">Past date selected: </span>
+                  <span>The date you selected is in the past. Saving this will record it as an <strong>Overdue Follow-up</strong>.</span>
+                </div>
+              </div>
+
+              <label className="flex items-center gap-2 text-xs font-semibold text-amber-950 cursor-pointer pt-1 border-t border-amber-200/60">
+                <input
+                  type="checkbox"
+                  checked={allowPastDate}
+                  onChange={(e) => setAllowPastDate(e.target.checked)}
+                  className="rounded border-amber-300 text-amber-600 focus:ring-amber-500"
+                />
+                <span>Allow recording as an overdue follow-up</span>
+              </label>
+            </div>
+          )}
+
+          {!nextFollowUpDate && lead.status === 'FOLLOW_UP' && (
+            <p className="text-[11px] text-amber-600 mt-1 font-medium">
+              Notice: Leaving date blank will keep this follow-up marked as "Unscheduled".
+            </p>
+          )}
         </div>
 
         {/* Action buttons */}
@@ -120,7 +224,11 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-5 py-2 text-sm font-semibold text-white bg-indigo-600 hover:bg-indigo-700 rounded-xl shadow-sm shadow-indigo-200 transition flex items-center gap-2 disabled:opacity-50"
+            className={`px-5 py-2 text-sm font-semibold text-white rounded-xl shadow-sm transition flex items-center gap-2 disabled:opacity-50 ${
+              isPastDate
+                ? 'bg-amber-600 hover:bg-amber-700 shadow-amber-200'
+                : 'bg-indigo-600 hover:bg-indigo-700 shadow-indigo-200'
+            }`}
           >
             {isSubmitting ? (
               <>
@@ -133,7 +241,7 @@ export default function AddFollowUpModal({ isOpen, onClose, lead, onFollowUpAdde
             ) : (
               <>
                 <PlusCircle className="w-4 h-4" />
-                <span>Save Follow-up</span>
+                <span>{isPastDate ? 'Save Overdue Follow-up' : 'Save Follow-up'}</span>
               </>
             )}
           </button>
