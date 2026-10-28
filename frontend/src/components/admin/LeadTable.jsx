@@ -15,7 +15,11 @@ import {
   Phone,
   ArrowUpDown,
   AlertCircle,
-  FileText,
+  AlertTriangle,
+  Bell,
+  CheckCircle,
+  XCircle,
+  CalendarPlus,
 } from 'lucide-react';
 
 export default function LeadTable({
@@ -47,41 +51,124 @@ export default function LeadTable({
     }
   };
 
-  const formatDateTime = (dateString) => {
-    if (!dateString) return '—';
+  const formatTime = (dateString) => {
+    if (!dateString) return '';
     try {
       const d = new Date(dateString);
-      return d.toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
+      return d.toLocaleTimeString('en-US', {
         hour: '2-digit',
         minute: '2-digit',
       });
     } catch {
-      return dateString;
+      return '';
     }
   };
 
-  const getNextFollowUpMeta = (followUps) => {
-    if (!followUps || followUps.length === 0) return null;
-    // Find the latest follow up with a nextFollowUpDate
-    const withDates = followUps.filter((f) => f.nextFollowUpDate);
-    if (withDates.length === 0) return null;
+  // Comprehensive Edge-Case Status Evaluator
+  const getFollowUpStatus = (lead) => {
+    // Edge Case 5: Converted lead -> Exclude from active follow-ups
+    if (lead.status === 'CONVERTED') {
+      return {
+        type: 'CONVERTED',
+        badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+        icon: CheckCircle,
+        label: 'Completed (Converted)',
+        subtext: 'Lead converted into customer',
+        isActionable: false,
+      };
+    }
 
-    const latest = withDates[withDates.length - 1];
+    // Edge Case 6: Lost lead -> Cancel or exclude active reminder
+    if (lead.status === 'LOST') {
+      return {
+        type: 'LOST',
+        badgeClass: 'bg-slate-100 text-slate-500 border-slate-200',
+        icon: XCircle,
+        label: 'Cancelled (Lead Lost)',
+        subtext: 'Active reminders closed',
+        isActionable: false,
+      };
+    }
+
+    const followUps = lead.followUps || [];
+    const withDates = followUps.filter((f) => f.nextFollowUpDate);
+    const latest = withDates.length > 0 ? withDates[withDates.length - 1] : null;
+
+    // Edge Case 2: Status is FOLLOW_UP, but the date is null -> Unscheduled
+    if (!latest || !latest.nextFollowUpDate) {
+      if (lead.status === 'FOLLOW_UP') {
+        return {
+          type: 'UNSCHEDULED',
+          badgeClass: 'bg-amber-50 text-amber-900 border-amber-300 ring-1 ring-amber-200',
+          icon: AlertTriangle,
+          label: 'Unscheduled Follow-up',
+          subtext: 'Follow-up date required',
+          isActionable: true,
+          actionText: 'Set Date',
+        };
+      }
+      return {
+        type: 'NONE',
+        badgeClass: 'text-slate-400 italic',
+        icon: null,
+        label: 'None scheduled',
+        subtext: null,
+        isActionable: false,
+      };
+    }
+
     const followUpDate = new Date(latest.nextFollowUpDate);
     const now = new Date();
-    const isPast = followUpDate < now;
+
     const isToday =
       followUpDate.getDate() === now.getDate() &&
       followUpDate.getMonth() === now.getMonth() &&
       followUpDate.getFullYear() === now.getFullYear();
 
+    const isPast = followUpDate < now && !isToday;
+
+    // Calculate days difference
+    let daysDiff = 0;
+    if (isPast) {
+      const diffTime = Math.abs(now.setHours(0, 0, 0, 0) - new Date(followUpDate).setHours(0, 0, 0, 0));
+      daysDiff = Math.max(1, Math.round(diffTime / (1000 * 60 * 60 * 24)));
+    }
+
+    // Edge Case 3: Due Today
+    if (isToday) {
+      return {
+        type: 'DUE_TODAY',
+        badgeClass: 'bg-amber-100 text-amber-900 border-amber-300 font-bold',
+        icon: Bell,
+        label: `Due Today: ${formatTime(latest.nextFollowUpDate) || 'Today'}`,
+        subtext: 'Action required today',
+        isActionable: true,
+        date: latest.nextFollowUpDate,
+      };
+    }
+
+    // Edge Case 4: Overdue
+    if (isPast) {
+      return {
+        type: 'OVERDUE',
+        badgeClass: 'bg-rose-100 text-rose-800 border-rose-300 font-bold',
+        icon: AlertCircle,
+        label: `Overdue: ${daysDiff > 0 ? `${daysDiff}d ago` : formatDate(latest.nextFollowUpDate)}`,
+        subtext: `Was due on ${formatDate(latest.nextFollowUpDate)}`,
+        isActionable: true,
+        date: latest.nextFollowUpDate,
+      };
+    }
+
+    // Upcoming future follow-up
     return {
+      type: 'UPCOMING',
+      badgeClass: 'bg-indigo-50 text-indigo-700 border-indigo-100',
+      icon: Clock,
+      label: `Next: ${formatDate(latest.nextFollowUpDate)}`,
+      subtext: `${formatTime(latest.nextFollowUpDate)}`,
+      isActionable: false,
       date: latest.nextFollowUpDate,
-      isPast,
-      isToday,
-      notePreview: latest.notes,
     };
   };
 
@@ -114,7 +201,7 @@ export default function LeadTable({
               <th className="py-3.5 px-4 sm:px-6">Contact / Client</th>
               <th className="py-3.5 px-4">Service of Interest</th>
               <th className="py-3.5 px-4">Status</th>
-              <th className="py-3.5 px-4">Next Follow-up</th>
+              <th className="py-3.5 px-4">Follow-up Status</th>
               <th
                 className="py-3.5 px-4 cursor-pointer hover:text-slate-900 transition select-none"
                 onClick={() => onSort('createdAt')}
@@ -129,7 +216,8 @@ export default function LeadTable({
           </thead>
           <tbody className="divide-y divide-slate-100">
             {leads.map((lead) => {
-              const followUpMeta = getNextFollowUpMeta(lead.followUps);
+              const statusMeta = getFollowUpStatus(lead);
+              const StatusIcon = statusMeta.icon;
 
               return (
                 <tr
@@ -213,36 +301,33 @@ export default function LeadTable({
                     </div>
                   </td>
 
-                  {/* Follow-up status */}
+                  {/* Follow-up status with edge-case badges */}
                   <td className="py-4 px-4">
-                    {followUpMeta ? (
-                      <div>
-                        <div
-                          className={`inline-flex items-center gap-1 text-xs font-semibold px-2 py-0.5 rounded-md ${
-                            followUpMeta.isPast
-                              ? 'bg-rose-50 text-rose-700 border border-rose-200'
-                              : followUpMeta.isToday
-                              ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                              : 'bg-indigo-50 text-indigo-700 border border-indigo-100'
-                          }`}
-                        >
-                          <Clock className="w-3 h-3" />
-                          <span>
-                            {followUpMeta.isPast
-                              ? 'Overdue: '
-                              : followUpMeta.isToday
-                              ? 'Due Today: '
-                              : 'Next: '}
-                            {formatDate(followUpMeta.date)}
-                          </span>
-                        </div>
-                        <span className="block text-[11px] text-slate-400 mt-0.5">
-                          {lead.followUps.length} follow-up {lead.followUps.length === 1 ? 'note' : 'notes'}
-                        </span>
+                    <div>
+                      <div
+                        className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-lg border ${statusMeta.badgeClass}`}
+                      >
+                        {StatusIcon && <StatusIcon className="w-3.5 h-3.5 flex-shrink-0" />}
+                        <span>{statusMeta.label}</span>
                       </div>
-                    ) : (
-                      <span className="text-xs text-slate-400 italic">None scheduled</span>
-                    )}
+
+                      {statusMeta.subtext && (
+                        <span className="block text-[11px] text-slate-400 mt-0.5">
+                          {statusMeta.subtext}
+                        </span>
+                      )}
+
+                      {/* Shortcut to schedule date if unscheduled */}
+                      {statusMeta.type === 'UNSCHEDULED' && (
+                        <button
+                          onClick={() => onAddFollowUp(lead)}
+                          className="mt-1 inline-flex items-center gap-1 text-[11px] font-bold text-amber-700 hover:text-amber-800 underline"
+                        >
+                          <CalendarPlus className="w-3 h-3" />
+                          <span>Schedule Now &rarr;</span>
+                        </button>
+                      )}
+                    </div>
                   </td>
 
                   {/* Date Created */}

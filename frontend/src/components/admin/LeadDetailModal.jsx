@@ -14,6 +14,8 @@ import {
   Tag,
   CheckCircle2,
   AlertCircle,
+  AlertTriangle,
+  Bell,
   Building,
 } from 'lucide-react';
 
@@ -61,6 +63,8 @@ export default function LeadDetailModal({
     }
   };
 
+  const hasScheduledFollowUp = lead.followUps && lead.followUps.some((f) => f.nextFollowUpDate != null);
+
   return (
     <Modal
       isOpen={isOpen}
@@ -98,6 +102,42 @@ export default function LeadDetailModal({
             </select>
           </div>
         </div>
+
+        {/* Edge Cases 2, 5 & 6 Context Notice Banners */}
+        {lead.status === 'CONVERTED' && (
+          <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-xs text-emerald-800">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+            <span>
+              <strong>Customer Converted:</strong> Rahul / this client has officially become a customer. All active sales follow-up reminders are marked as completed and excluded from active queues.
+            </span>
+          </div>
+        )}
+
+        {lead.status === 'LOST' && (
+          <div className="p-3.5 rounded-xl bg-slate-100 border border-slate-200 flex items-center gap-2.5 text-xs text-slate-700">
+            <AlertCircle className="w-4 h-4 text-slate-500 flex-shrink-0" />
+            <span>
+              <strong>Lead Closed as Lost:</strong> This lead is inactive. Scheduled reminders have been cancelled and excluded from active queues.
+            </span>
+          </div>
+        )}
+
+        {lead.status === 'FOLLOW_UP' && !hasScheduledFollowUp && (
+          <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-between gap-2.5 text-xs text-amber-900">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <span>
+                <strong>Unscheduled Follow-up:</strong> Status is set to Follow-up, but no next follow-up date has been scheduled yet.
+              </span>
+            </div>
+            <button
+              onClick={() => onOpenAddFollowUp(lead)}
+              className="px-2.5 py-1 text-xs font-bold text-amber-900 bg-amber-100 hover:bg-amber-200 rounded-lg transition flex-shrink-0"
+            >
+              Schedule Now
+            </button>
+          </div>
+        )}
 
         {/* Contact info grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -179,34 +219,65 @@ export default function LeadDetailModal({
 
           {lead.followUps && lead.followUps.length > 0 ? (
             <div className="space-y-3 relative before:absolute before:inset-0 before:left-4 before:w-0.5 before:bg-slate-200">
-              {lead.followUps.map((fu, idx) => (
-                <div key={fu.id || idx} className="relative pl-9 group">
-                  {/* Timeline bullet dot */}
-                  <div className="absolute left-2.5 top-2 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white shadow-xs" />
+              {lead.followUps.map((fu, idx) => {
+                const isPast = fu.nextFollowUpDate ? new Date(fu.nextFollowUpDate) < new Date() : false;
+                const isToday = fu.nextFollowUpDate
+                  ? new Date(fu.nextFollowUpDate).toDateString() === new Date().toDateString()
+                  : false;
 
-                  <div className="p-3.5 rounded-xl border border-slate-100 bg-white shadow-xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
-                      <span className="text-xs font-bold text-slate-900">
-                        Follow-up #{idx + 1}
-                      </span>
-                      <span className="text-[11px] text-slate-400">
-                        {formatDate(fu.createdAt)}
-                      </span>
-                    </div>
+                return (
+                  <div key={fu.id || idx} className="relative pl-9 group">
+                    {/* Timeline bullet dot */}
+                    <div className="absolute left-2.5 top-2 w-3 h-3 rounded-full bg-indigo-600 border-2 border-white shadow-xs" />
 
-                    <p className="text-xs text-slate-700 leading-relaxed mb-2 whitespace-pre-wrap">
-                      {fu.notes}
-                    </p>
-
-                    {fu.nextFollowUpDate && (
-                      <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200 text-[11px] font-semibold">
-                        <Calendar className="w-3 h-3 text-amber-600" />
-                        <span>Next scheduled: {formatDate(fu.nextFollowUpDate)}</span>
+                    <div className="p-3.5 rounded-xl border border-slate-100 bg-white shadow-xs">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-2">
+                        <span className="text-xs font-bold text-slate-900">
+                          Follow-up #{idx + 1}
+                        </span>
+                        <span className="text-[11px] text-slate-400">
+                          {formatDate(fu.createdAt)}
+                        </span>
                       </div>
-                    )}
+
+                      <p className="text-xs text-slate-700 leading-relaxed mb-2 whitespace-pre-wrap">
+                        {fu.notes}
+                      </p>
+
+                      {fu.nextFollowUpDate && (
+                        <div>
+                          {lead.status === 'CONVERTED' ? (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                              <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                              <span>Completed (Customer Converted)</span>
+                            </div>
+                          ) : lead.status === 'LOST' ? (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 border border-slate-200 text-[11px] font-semibold">
+                              <AlertCircle className="w-3 h-3 text-slate-400" />
+                              <span>Cancelled (Lead Lost)</span>
+                            </div>
+                          ) : isToday ? (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 text-[11px] font-bold">
+                              <Bell className="w-3 h-3 text-amber-600" />
+                              <span>Due Today: {formatDate(fu.nextFollowUpDate)}</span>
+                            </div>
+                          ) : isPast ? (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-100 text-rose-800 border border-rose-300 text-[11px] font-bold">
+                              <AlertCircle className="w-3 h-3 text-rose-600" />
+                              <span>Overdue: {formatDate(fu.nextFollowUpDate)}</span>
+                            </div>
+                          ) : (
+                            <div className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 text-[11px] font-semibold">
+                              <Calendar className="w-3 h-3 text-indigo-600" />
+                              <span>Next scheduled: {formatDate(fu.nextFollowUpDate)}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-6 px-4 bg-slate-50/50 rounded-xl border border-dashed border-slate-200">
